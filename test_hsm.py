@@ -39,39 +39,6 @@ def hierarchical_softmax(X_train,y_train,y_mask):
     print("hsm time:",time.time()-temp)
 
 
-def normal_softmax(examples,labels):
-    print ("Normal softmax")
-    #Logistic regression with normal softmax-test
-    input = T.fmatrix('inputs')
-    y = T.ivector('labels')
-    rng = np.random.RandomState(1234)
-
-    learning_rate = 0.5
-    W = theano.shared(value=np.asarray(rng.uniform(
-        low=-np.sqrt(6. / 50),
-        high=np.sqrt(6. / 50),size=(example_size, label_count)),
-        dtype=theano.config.floatX), name = 'W_soft', borrow = True)
-
-    b = theano.shared(value=np.zeros(label_count))
-
-    p_y_given_x = T.nnet.softmax(T.dot(input, W) + b)
-    cost = T.mean(T.nnet.categorical_crossentropy(p_y_given_x,y))
-    params = [W, b]
-
-    gparams = T.grad(cost,params)
-    updates = [(param, param - learning_rate * gparam) for param, gparam in zip(params, gparams)]
-    train_f = theano.function(inputs=[input, y],
-                              outputs=[cost],
-                              updates=updates)
-
-    now=time.time()
-    for i in range(10):
-        for ex,lab in zip(examples,labels):
-            result=train_f(ex,lab)
-
-
-    print "normal time:", time.time()-now
-
 if __name__=="__main__":
     X_train,y_train,y_mask = create_data(n_steps,batch_size, vocabulary_size)
     print y_train

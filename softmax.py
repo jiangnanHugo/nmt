@@ -176,42 +176,32 @@ class HierarchicalSoftmaxLayer(object):
         nodes=self.route_choice_matrix[self.y]
         choices=self.route_choice_matrix[self.y]
         mask=self.mask_matrix[self.y]
-
         # 2.
         wp=self.wp_matrix[nodes]
         # feature.dimshuffle(0,1,'x',2)
-
         node=T.sum(wp * self.x.dimshuffle(0,1,'x',2),axis=-1)
 
         #log_sigmoid=-T.mean(T.log(T.nnet.sigmoid(node*choices))*mask,axis=-1)
-        log_sigmoid=T.mean(T.log(1+T.exp(-node*choices)),axis=-1)
+        log_sigmoid=T.mean(T.log(1+T.exp(-node*choices))*mask,axis=-1)
 
         cost=log_sigmoid*self.maskY   # matrix element-wise dot
         self.activation=cost.sum()/self.maskY.sum()
 
 
     def build_predict(self):
-        self.root_node=T.as_tensor_variable(np.array[self.tree[-1][0].index])
-        self.node_count_t=T.as_tensor_variable(self.node_count)
+        n_steps=self.x.shape[0]
+        batch_size=self.x.shape[1]
 
-        def istep():
-            return self.root_node
-        ires,_=theano.scan(istep,n_steps=self.x.shape[0])
-        fires=ires.flatten()
+        fires=T.ones(shape=(n_steps,batch_size),dtype=np.int32)*self.tree[-1][0].index
 
         def predict_step(current_node,input_vector):
-            # get the results
             # left nodes
-            node_res_l=T.nnet.sigmoid(T.dot(self.wp_matrix[current_node],input_vector.T))
-            correct_nodes_l=node_res_l[T.arange(input_vector.shape[0]),T.arange(input_vector.shape[0])]
+            node_res_l=T.nnet.sigmoid(T.sum(self.wp_matrix[current_node]*input_vector,axis=-1))
+            node_res_r=T.nnet.sigmoid(-1.0*T.sum(self.wp_matrix[current_node]*input_vector,axis=-1))
 
-            # right_node
-            node_res_r=T.nnet.sigmoid(-1*T.dot(self.wp_matrix[current_node],input_vector.T))
-            correct_nodes_r=node_res_r[T.arange(input_vector.shape[0]),T.arange(input_vector.shape[0])]
-
-            choice=correct_nodes_l>correct_nodes_r
-            next_node=self.tree_matrix[current_node.flatten(),choice.flatten()]
-            labelings=self.tree_matrix[current_node.flatten(),choice.flatten()+2]
+            choice=node_res_l>node_res_r
+            next_node=self.tree_matrix[current_node,choice]
+            labelings=self.tree_matrix[current_node,choice+2]
 
             return next_node,labelings,choice
 
@@ -219,12 +209,13 @@ class HierarchicalSoftmaxLayer(object):
                               outputs_info=[fires,None,None],
                               non_sequences=self.x,
                               n_steps=self.max_route_len)
-        self.labels=xresult[1][-1][-1]
-        self.predict_label=theano.function([self.x],self.labels)
-        self.label_tool=theano.function([self.x],xresult)
+        self.labels=xresult[1][-1]*self.maskY
+        self.predict_label=theano.function(inputs=[self.x,self.maskY],
+                                           outputs=self.labels)
+        #self.label_tool=theano.function([self.x],xresult)
 
     def get_prediction_function(self):
-        return  self.predict_label,self.label_tool
+        return  self.predict_label#,self.label_tool
 
     def get_route(self,node):
         route=[]

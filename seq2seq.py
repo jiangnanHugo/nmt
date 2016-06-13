@@ -57,6 +57,7 @@ class Seq2Seq(object):
         self.params+=self.decoder.params
         self.params+=self.output_layer.params
         self.cost=self.output_layer.activation
+        self.prediction=self.output_layer.predict_labels
 
     def build_model(self):
 
@@ -65,7 +66,7 @@ class Seq2Seq(object):
         lr=T.scalar("lr")
         updates=[(p,p-lr*gp)for p,gp in zip (self.params,gparams)]
 
-        # prediction=self.output_layer.predict_labels
+
 
         self.train_model=theano.function(inputs=[self.X,self.maskX,self.Y,self.maskY,lr],
                                          givens={self.is_train:np.cast['int32'](1)},
@@ -73,9 +74,9 @@ class Seq2Seq(object):
                                          updates=updates,
 										 profile=True)
 
-        self.predict_model=theano.function(inputs=[self.X,self.maskX,self.batch_size],
+        self.predict_model=theano.function(inputs=[self.X,self.maskX,self.maskY],
                                            givens={self.is_train:np.cast['int32'](0)},
-                                           outputs=prediction)
+                                           outputs=self.prediction)
 
 
 
