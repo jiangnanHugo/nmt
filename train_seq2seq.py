@@ -25,6 +25,7 @@ target_vocab_size=10000
 maxlen=100
 max_epochs=100
 dispFreq=1000
+sampleFreq=400
 saveFreq=2000
 lr = 0.02
 
@@ -57,3 +58,8 @@ for eidx in xrange(max_epochs):
             print "dumping..."
             with open('parameters_%.2f.pkl' % (time.time()-begin_again),'w')as f:
                 pickle.dump(model.params,f)
+
+        if uidx%sampleFreq==0:
+            print "sampling..."
+            y_pred=model.predict_model(x,x_mask,y_mask)
+            print y_pred

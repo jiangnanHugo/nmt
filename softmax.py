@@ -192,7 +192,7 @@ class HierarchicalSoftmaxLayer(object):
         n_steps=self.x.shape[0]
         batch_size=self.x.shape[1]
 
-        fires=T.ones(shape=(n_steps,batch_size),dtype=np.int32)*self.tree[-1][0].index
+        fires=T.ones(shape=(n_steps,batch_size),dtype=np.int64)*self.tree[-1][0].index
 
         def predict_step(current_node,input_vector):
             # left nodes
@@ -210,12 +210,12 @@ class HierarchicalSoftmaxLayer(object):
                               non_sequences=self.x,
                               n_steps=self.max_route_len)
         self.labels=xresult[1][-1]*self.maskY
-        self.predict_label=theano.function(inputs=[self.x,self.maskY],
+        self.predict_labels=theano.function(inputs=[self.x,self.maskY],
                                            outputs=self.labels)
         #self.label_tool=theano.function([self.x],xresult)
 
     def get_prediction_function(self):
-        return  self.predict_label#,self.label_tool
+        return  self.predict_labels#,self.label_tool
 
     def get_route(self,node):
         route=[]
