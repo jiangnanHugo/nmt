@@ -4,8 +4,8 @@ import theano.tensor as T
 from gru import GRULayer
 from softmax import HierarchicalSoftmaxLayer as h_softmax
 
-# Seq2Seq Model
-class Seq2Seq(object):
+# NMT Model
+class NMT(object):
     # in_size: word_embedding_size
     # hidden_size: hidden_layer_size;
     # out_size: vocabulary_size;
